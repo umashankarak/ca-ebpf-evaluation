@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-06-09T04:48:57.308458+00:00",
+  "total_attacks": 6,
+  "obvious_count": 6,
+  "stealth_count": 0,
+  "attacks": [
+    {
+      "attack_type": "token_replay",
+      "attack_category": "OBVIOUS_ATTACK",
+      "start_ts": "2026-06-09T04:48:35.494161+00:00",
+      "end_ts": "2026-06-09T04:48:36.060950+00:00",
+      "target": "order-service",
+      "token_type": "invalid/replayed"
+    },
+    {
+      "attack_type": "unknown_identity",
+      "attack_category": "OBVIOUS_ATTACK",
+      "start_ts": "2026-06-09T04:48:38.061100+00:00",
+      "end_ts": "2026-06-09T04:48:39.111817+00:00",
+      "target": "multiple",
+      "identities": [
+        "external-scanner",
+        "rogue-service",
+        "pentest-tool",
+        "unknown",
+        "lateral-movement-bot"
+      ]
+    },
+    {
+      "attack_type": "cross_namespace",
+      "attack_category": "OBVIOUS_ATTACK",
+      "start_ts": "2026-06-09T04:48:41.111949+00:00",
+      "end_ts": "2026-06-09T04:48:44.164015+00:00",
+      "target": "payment-service",
+      "claimed_namespace": "attacker-namespace"
+    },
+    {
+      "attack_type": "admin_direct_access",
+      "attack_category": "OBVIOUS_ATTACK",
+      "start_ts": "2026-06-09T04:48:46.164169+00:00",
+      "end_ts": "2026-06-09T04:48:46.791477+00:00",
+      "target": "admin-service",
+      "attackers": [
+        "order-service",
+        "payment-service",
+        "user-profile-service"
+      ]
+    },
+    {
+      "attack_type": "burst_flood",
+      "attack_category": "OBVIOUS_ATTACK",
+      "start_ts": "2026-06-09T04:48:48.791605+00:00",
+      "end_ts": "2026-06-09T04:48:50.306670+00:00",
+      "target": "payment-service",
+      "burst_count": 60,
+      "approx_rps": 50
+    },
+    {
+      "attack_type": "privilege_escalation",
+      "attack_category": "OBVIOUS_ATTACK",
+      "start_ts": "2026-06-09T04:48:52.306799+00:00",
+      "end_ts": "2026-06-09T04:48:52.307992+00:00",
+      "method": "kubectl_exec",
+      "target_service": "payment-service"
+    }
+  ]
+}

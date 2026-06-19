@@ -1,272 +1,79 @@
-# Context-Aware eBPF Trust Boundary Enforcement (CA-eBPF)
+# Supplementary Materials
+
+**Paper:** Multi-Signal Trust Scoring for Cloud-Native Microservice Security:
+An eBPF-Based Framework for Stealth Attack Detection Without Sidecar Proxies
+
+**Author:** Umashankara Kalaiah
+**ORCID:** 0009-0000-5030-6751
+**Contact:** umashankarak@gmail.com
+
+---
 
 ## Overview
 
-Context-Aware eBPF Trust Boundary Enforcement (CA-eBPF) is a research prototype that explores sidecar-less trust-boundary enforcement for cloud-native microservice environments. The framework leverages contextual telemetry, workload identity validation, behavioral anomaly detection, and trust scoring concepts inspired by eBPF-based observability systems to improve runtime security decisions without relying on service mesh sidecar proxies.
+This archive contains all datasets, evaluation code, raw telemetry, ground
+truth files, system provenance, and prototype implementation artifacts
+supporting the experimental results reported in the manuscript. The
+materials enable independent verification of every numerical claim in the
+paper, including the simulation study (Section 9.1) and the real-cluster
+validation (Section 9.2).
 
-Traditional microservice security solutions often depend on service meshes such as Istio or Linkerd to enforce security policies. While effective, these approaches introduce additional operational complexity, resource consumption, and deployment overhead. CA-eBPF investigates an alternative model in which contextual runtime information is used to evaluate trust relationships between services and identify unauthorized communication patterns.
-
-This repository contains the experimental evaluation artifacts used to validate the trust-boundary enforcement model presented in the paper:
-
-> **Context-Aware eBPF Trust Boundary Enforcement for Sidecar-less Microservice Security**
-
----
-
-## Research Objectives
-
-The primary objectives of this project are:
-
-* Explore sidecar-less trust-boundary enforcement concepts for microservices.
-* Investigate context-aware authorization using runtime telemetry.
-* Compare traditional logs-only monitoring against contextual trust evaluation.
-* Demonstrate how additional contextual signals can improve detection of unauthorized service interactions.
-* Evaluate security effectiveness using standard classification metrics.
+All simulation results are reproducible by executing `ca_ebpf_evaluation.py`
+with NumPy random seed 42 on the dataset in S1.
 
 ---
 
-## Trust Evaluation Model
+## Two-Part Structure
 
-### Logs-Only Baseline
+The supplementary materials are organised into two groups:
 
-The baseline detector relies exclusively on application log content.
+**S1–S7 — Simulation Study Artifacts**
+Synthetic 5,000-event dataset, per-event predictions for all five detection
+approaches, aggregate metrics, sensitivity analyses, ROC curve data, and
+trust score component breakdowns. These materials support the comparative
+effectiveness evaluation reported in Section 9.1.
 
-Examples:
+**S8–S13 — Real Kubernetes Cluster Validation Artifacts**
+Real-cluster dataset derived from Cilium Tetragon eBPF observations, raw
+Tetragon event log, telemetry processing report, attack injection ground
+truth files, and system provenance. These materials support the
+deployability validation reported in Section 9.2.
 
-* Unauthorized token reuse
-* Replay attack indicators
-* Invalid payload messages
-* Unknown event sources
-
-Detection decisions are made using keyword matching.
-
-### CA-eBPF Framework
-
-The proposed framework evaluates additional contextual attributes:
-
-* Trust score
-* Service identity validation
-* Runtime anomaly indicators
-* Trace-path consistency
-* Invocation frequency analysis
-
-These contextual signals are combined into a trust evaluation score used to classify communication events as benign or malicious.
+**S14 — Prototype Implementation**
+Complete eBPF source code, Kubernetes manifests, microservice
+implementations, traffic generation scripts, attack injection scripts, and
+telemetry processing pipeline enabling independent replication of the
+prototype deployment.
 
 ---
 
-## Experimental Dataset
-
-The evaluation dataset consists of synthetic microservice communication events designed to emulate realistic cloud-native workloads.
-
-### Dataset Composition
-
-| Event Type            | Count |
-| --------------------- | ----: |
-| Benign Events         | 1,000 |
-| Obvious Attack Events |   200 |
-| Stealth Attack Events |   100 |
-| Total Events          | 1,300 |
-
-### Event Attributes
-
-Each event contains:
-
-* Service identifier
-* Application log message
-* Status information
-* Trust score
-* Service identity validation flag
-* Runtime anomaly indicator
-* Trace-path violation indicator
-* Invocation frequency
-* Ground-truth label
-
----
-
-## Repository Structure
-
-```text
-ca-ebpf-evaluation/
-│
-├── generate_events.js
-├── detect_logs.js
-├── detect_caebpf.js
-├── metrics.js
-│
-├── events.json
-├── logs_results.json
-├── caebpf_results.json
-│
-└── README.md
-```
-
-### File Descriptions
-
-#### generate_events.js
-
-Generates a synthetic dataset of benign and malicious microservice communication events.
-
-#### detect_logs.js
-
-Implements the logs-only baseline detector using application log analysis.
-
-#### detect_caebpf.js
-
-Implements the context-aware trust evaluation model using multiple telemetry attributes.
-
-#### metrics.js
-
-Computes evaluation metrics including:
-
-* Accuracy
-* Precision
-* Recall
-* F1-score
-
----
-
-## Prerequisites
-
-### Software Requirements
-
-* Node.js 18+ (recommended)
-
-Verify installation:
-
-```bash
-node --version
-```
-
----
-
-## Running the Evaluation
-
-### Step 1: Generate Dataset
-
-```bash
-node generate_events.js
-```
-
-Expected output:
-
-```text
-Generated 1300 events
-```
-
-This creates:
-
-```text
-events.json
-```
-
----
-
-### Step 2: Run Logs-Only Baseline
-
-```bash
-node detect_logs.js
-```
-
-Generate metrics:
-
-```bash
-node metrics.js logs_results.json
-```
-
----
-
-### Step 3: Run CA-eBPF Detector
-
-```bash
-node detect_caebpf.js
-```
-
-Generate metrics:
-
-```bash
-node metrics.js caebpf_results.json
-```
-
----
-
-## Experimental Results
-
-### Confusion Matrix Results
-
-| Metric               | Logs-Only | CA-eBPF |
-| -------------------- | --------: | ------: |
-| True Positives (TP)  |       200 |     251 |
-| False Positives (FP) |        39 |      10 |
-| True Negatives (TN)  |       961 |     990 |
-| False Negatives (FN) |       100 |      49 |
-
-### Security Effectiveness Comparison
-
-| Metric    | Logs-Only | CA-eBPF |
-| --------- | --------: | ------: |
-| Accuracy  |    89.31% |  95.46% |
-| Precision |    83.68% |  96.17% |
-| Recall    |    66.67% |  83.67% |
-| F1-Score  |    74.21% |  89.48% |
-
----
-
-## Key Findings
-
-The evaluation demonstrates that contextual runtime telemetry can significantly improve trust-boundary enforcement effectiveness compared with traditional log-based monitoring.
-
-Observed improvements include:
-
-* Reduced false positives
-* Improved malicious activity detection
-* Better visibility into stealth attack scenarios
-* Higher overall precision and recall
-* Improved F1-score
-
-The CA-eBPF framework achieved a **15.27 percentage-point improvement in F1-score** over the logs-only baseline.
-
----
-
-## Limitations
-
-This repository contains a prototype research implementation intended for experimental evaluation.
-
-Current limitations include:
-
-* Synthetic dataset generation
-* Single-node simulation environment
-* No direct kernel-level eBPF implementation
-* No production Kubernetes deployment
-* No latency or resource-consumption benchmarking
-
-The implementation is intended to demonstrate trust-boundary enforcement concepts rather than serve as a production-ready security platform.
-
----
-
-## Future Work
-
-Potential future enhancements include:
-
-* Real Kubernetes deployment
-* Integration with eBPF telemetry frameworks
-* Dynamic trust propagation across clusters
-* Adaptive trust scoring
-* Machine-learning-assisted anomaly detection
-* Comparative evaluation against service mesh architectures
-
----
-
-## Citation
-
-If you use this repository in academic work, please cite:
-
-```text
-Kalaiah, U.
-Context-Aware eBPF Trust Boundary Enforcement for Sidecar-less Microservice Security.
-2026.
-```
-
----
-
-## License
-
-This project is provided for research and educational purposes.
+## File Index
+
+### Simulation Study (S1–S7)
+
+| ID  | Filename                          | Description                                                                          | Format |
+|-----|-----------------------------------|--------------------------------------------------------------------------------------|--------|
+| S1  | `S1_synthetic_dataset.csv`        | 5,000 simulated communication events with six telemetry features and ground-truth labels (3,800 benign, 700 obvious, 500 stealth) | CSV    |
+| S2  | `S2_per_event_predictions.csv`    | Per-event binary predictions and continuous risk scores for all five detection approaches (logs-only, identity-only, anomaly-only, identity+anomaly, CA-eBPF) | CSV    |
+| S3  | `S3_aggregate_metrics.csv`        | Computed accuracy, precision, recall, F1, AUC-ROC, and per-category detection rates for all five approaches (matches Tables 6 and 8 in the manuscript) | CSV    |
+| S4  | `S4_sensitivity_analysis.csv`     | Threshold sweep (0.30–0.85) and weight configuration evaluation results (matches Table 10 in the manuscript) | CSV    |
+| S5  | `S5_threshold_sweep_detail.csv`   | Per-threshold precision, recall, F1, and per-category detection rates at fine threshold granularity, supporting Figure 8a | CSV    |
+| S6  | `S6_roc_curve_data.csv`           | (FPR, TPR) coordinate pairs across all threshold values for each of the five detection approaches, supporting Figure 5 | CSV    |
+| S7  | `S7_trust_score_components.csv`   | Per-event values of the five trust score components (Iv, Bc, Nt, Pc, Tr), the runtime anomaly penalty (Ra), and the final trust score (Ts) | CSV    |
+
+### Real Kubernetes Cluster Validation (S8–S13)
+
+| ID   | Filename                                          | Description                                                                          | Format     |
+|------|---------------------------------------------------|--------------------------------------------------------------------------------------|------------|
+| S8   | `S8_real_cluster_dataset.csv`                     | 1,200 windowed feature records derived from 58,186 raw Tetragon kprobe events using 10-second aggregation windows (1,101 benign, 3 obvious, 96 stealth) | CSV        |
+| S9   | `S9_tetragon_events.jsonl.gz`                     | Raw Cilium Tetragon eBPF event log captured during the 66-minute three-phase experiment (5.3 MB compressed, 258 MB uncompressed; one JSON object per line) | JSONL/gzip |
+| S10  | `S10_processing_report.json`                      | Pipeline processing metadata: raw event counts, telemetry coverage notes, window aggregation parameters, and trust scoring configuration | JSON       |
+| S11  | `S11_phase2_obvious_attacks_ground_truth.json`    | Phase 2 attack injection ground truth: six obvious attack scenarios with ISO 8601 start/end timestamps (token replay, unknown identity, cross-namespace, admin direct access, burst flood, privilege escalation) | JSON       |
+| S12  | `S12_phase3_stealth_attacks_ground_truth.json`    | Phase 3 attack injection ground truth: five stealth attack scenarios with ISO 8601 start/end timestamps (slow credential abuse, trace path anomaly, low-frequency enumeration, intermittent probe, identity mimicry) | JSON       |
+| S13  | `S13_system_provenance.json`                      | Full system provenance: AWS EC2 instance type, OS version, kernel version, kind version, Kubernetes version, Cilium Tetragon version | JSON       |
+
+### Prototype Implementation (S14)
+
+| ID  | Filename                              | Description                                                                          | Format |
+|-----|---------------------------------------|--------------------------------------------------------------------------------------|--------|
+| S14 | `S14_prototype_implementation/`       | Complete prototype source tree (see structure below)                                | Folder |

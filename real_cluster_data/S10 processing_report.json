@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-06-09T05:41:59.900279+00:00",
+  "data_source": "real_kubernetes_cluster_kind_aws_ec2",
+  "telemetry_engine": "cilium_tetragon_ebpf",
+  "raw_tetragon_events": 58186,
+  "network_kprobe_events": 58186,
+  "process_exec_events": 0,
+  "service_log_entries": 53149,
+  "attack_windows": 11,
+  "window_size_seconds": 10,
+  "total_records": 1200,
+  "benign": 1101,
+  "obvious_attack": 3,
+  "stealth_attack": 96,
+  "trust_weights": {
+    "wi": 0.3,
+    "wb": 0.2,
+    "wn": 0.2,
+    "wp": 0.15,
+    "wt": 0.15
+  },
+  "threshold": 0.65,
+  "note": "58,186 real Tetragon eBPF kernel network events from 4-node kind cluster on AWS EC2 t3.2xlarge. Ground truth from logged attack injection timestamps."
+}

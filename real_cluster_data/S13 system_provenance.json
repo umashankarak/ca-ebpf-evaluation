@@ -1,0 +1,10 @@
+{
+  "generated_at": "2026-06-09T05:41:59.900543+00:00",
+  "kernel": "7.0.0-1004-aws",
+  "os": "Ubuntu 26.04 LTS",
+  "arch": "x86_64",
+  "kind": "kind version 0.22.0",
+  "kubectl": "n/a",
+  "cluster_nodes": "ca-ebpf-cluster-control-plane   Ready   control-plane   81m   v1.29.2\nca-ebpf-cluster-worker          Ready   <none>          80m   v1.29.2\nca-ebpf-cluster-worker2         Ready   <none>          80m   v1.29.2\nca-ebpf-cluster-worker3         Ready   <none>          80m   v1.29.2",
+  "tetragon": "tetragon-cgj4f   2/2   Running   3 (79m ago)   80m\ntetragon-ndbr9   2/2   Running   2 (80m ago)   80m\ntetragon-ngqqg   2/2   Running   0             80m\ntetragon-pvsgv   2/2   Running   2 (80m ago)   80m"
+}

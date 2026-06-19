@@ -1,0 +1,46 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: ca-ebpf-cluster
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"
+        system-reserved: memory=512Mi
+  extraMounts:
+  - hostPath: /sys/kernel/debug
+    containerPath: /sys/kernel/debug
+    readOnly: false
+  - hostPath: /sys/fs/bpf
+    containerPath: /sys/fs/bpf
+    readOnly: false
+- role: worker
+  extraMounts:
+  - hostPath: /sys/kernel/debug
+    containerPath: /sys/kernel/debug
+    readOnly: false
+  - hostPath: /sys/fs/bpf
+    containerPath: /sys/fs/bpf
+    readOnly: false
+- role: worker
+  extraMounts:
+  - hostPath: /sys/kernel/debug
+    containerPath: /sys/kernel/debug
+    readOnly: false
+  - hostPath: /sys/fs/bpf
+    containerPath: /sys/fs/bpf
+    readOnly: false
+- role: worker
+  extraMounts:
+  - hostPath: /sys/kernel/debug
+    containerPath: /sys/kernel/debug
+    readOnly: false
+  - hostPath: /sys/fs/bpf
+    containerPath: /sys/fs/bpf
+    readOnly: false
+networking:
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/16"

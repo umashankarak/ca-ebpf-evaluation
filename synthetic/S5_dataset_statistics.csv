@@ -1,0 +1,5 @@
+event_type,count,trust_score_mean,trust_score_std,trust_score_min,trust_score_max,trust_score_median,invocation_frequency_mean,invocation_frequency_std,invocation_frequency_min,invocation_frequency_max,invocation_frequency_median,connection_score_mean,connection_score_std,connection_score_min,connection_score_max,connection_score_median,identity_valid_true_pct,runtime_anomaly_true_pct,trace_path_consistent_true_pct,namespace_violation_true_pct,process_anomaly_true_pct
+BENIGN,3800,0.84956,0.069018,0.580054,1.0,0.850514,2.507468,0.802815,0.5,5.521992,2.493254,0.830942,0.070938,0.586528,1.0,0.830897,0.977895,0.021579,0.971579,0.008947,0.025789
+OBVIOUS_ATTACK,700,0.165132,0.085675,0.0,0.38,0.163494,28.579182,7.703585,10.0,54.616011,28.653466,0.141202,0.070753,0.0,0.33,0.137865,0.121429,0.924286,0.081429,0.851429,0.868571
+STEALTH_ATTACK,500,0.566413,0.076931,0.37,0.73,0.566331,5.949694,1.223901,3.0,8.991848,5.925197,0.520649,0.089363,0.29,0.73,0.519256,0.7,0.36,0.438,0.212,0.378
+ALL,5000,0.725426,0.25187,0.0,1.0,0.82112,6.501731,9.452359,0.5,54.616011,2.825149,0.703349,0.25551,0.0,1.0,0.802143,0.8302,0.1818,0.7936,0.1472,0.179

@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-06-09T05:14:44.237140+00:00",
+  "total_attacks": 5,
+  "obvious_count": 0,
+  "stealth_count": 5,
+  "attacks": [
+    {
+      "attack_type": "slow_credential_abuse",
+      "attack_category": "STEALTH_ATTACK",
+      "start_ts": "2026-06-09T05:08:58.644872+00:00",
+      "end_ts": "2026-06-09T05:10:13.076759+00:00",
+      "target": "admin-service",
+      "method": "slow_rate_valid_identity"
+    },
+    {
+      "attack_type": "trace_path_anomaly",
+      "attack_category": "STEALTH_ATTACK",
+      "start_ts": "2026-06-09T05:10:16.076910+00:00",
+      "end_ts": "2026-06-09T05:11:26.141810+00:00",
+      "target": "user-profile-service",
+      "anomaly": "direct_call_bypassing_payment_service"
+    },
+    {
+      "attack_type": "low_freq_enumeration",
+      "attack_category": "STEALTH_ATTACK",
+      "start_ts": "2026-06-09T05:11:29.141935+00:00",
+      "end_ts": "2026-06-09T05:12:31.124696+00:00",
+      "target": "user-profile-service",
+      "method": "sequential_id_enumeration",
+      "count": 25,
+      "rate_rps_approx": 0.4
+    },
+    {
+      "attack_type": "intermittent_probe",
+      "attack_category": "STEALTH_ATTACK",
+      "start_ts": "2026-06-09T05:12:34.124807+00:00",
+      "end_ts": "2026-06-09T05:13:54.970814+00:00",
+      "target": "admin-service",
+      "attack_ratio": "1:5",
+      "description": "attacks_mixed_with_legitimate_traffic"
+    },
+    {
+      "attack_type": "identity_mimicry",
+      "attack_category": "STEALTH_ATTACK",
+      "start_ts": "2026-06-09T05:13:57.970948+00:00",
+      "end_ts": "2026-06-09T05:14:41.236718+00:00",
+      "target": "payment-service",
+      "method": "valid_name_deviant_behavior"
+    }
+  ]
+}

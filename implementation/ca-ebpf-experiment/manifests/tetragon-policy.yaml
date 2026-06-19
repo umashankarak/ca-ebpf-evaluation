@@ -1,0 +1,106 @@
+# =============================================================
+# CA-eBPF Tetragon TracingPolicy
+# Captures kernel-level network and process events
+# for trust boundary evaluation
+# =============================================================
+
+# Network connection monitoring (tcp_connect / tcp_close)
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: ca-ebpf-network-monitor
+  namespace: kube-system
+spec:
+  kprobes:
+  # Monitor outbound TCP connections
+  - call: "tcp_connect"
+    syscall: false
+    args:
+    - index: 0
+      type: "sock"
+    selectors:
+    - matchArgs:
+      - index: 0
+        operator: "NotDAddr"
+        values:
+        - "127.0.0.1"
+  # Monitor TCP connection close
+  - call: "tcp_close"
+    syscall: false
+    args:
+    - index: 0
+      type: "sock"
+  # Monitor failed connection attempts
+  - call: "tcp_v4_connect"
+    syscall: false
+    args:
+    - index: 0
+      type: "sock"
+    - index: 1
+      type: "sockaddr"
+      label: "dest_addr"
+---
+# Process execution monitoring (detects unexpected binary execution)
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: ca-ebpf-process-monitor
+  namespace: kube-system
+spec:
+  tracepoints:
+  - subsystem: "syscalls"
+    event: "sys_enter_execve"
+    args:
+    - index: 0
+      type: "string"
+      label: "filename"
+    - index: 1
+      type: "string_array"
+      label: "argv"
+    selectors:
+    # Flag execution of shells or unexpected utilities inside pods
+    - matchArgs:
+      - index: 0
+        operator: "Prefix"
+        values:
+        - "/bin/sh"
+        - "/bin/bash"
+        - "/bin/dash"
+        - "/usr/bin/wget"
+        - "/usr/bin/curl"
+        - "/bin/nc"
+        - "/usr/bin/ncat"
+        - "/usr/bin/python"
+        - "/usr/bin/perl"
+      matchActions:
+      - action: Post
+        rateLimit: "1/second"
+---
+# Privilege escalation monitoring
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: ca-ebpf-privilege-monitor
+  namespace: kube-system
+spec:
+  kprobes:
+  # Monitor setuid/setgid calls (privilege escalation)
+  - call: "sys_setuid"
+    syscall: true
+    args:
+    - index: 0
+      type: "int"
+      label: "uid"
+  # Monitor capability changes
+  - call: "cap_capable"
+    syscall: false
+    args:
+    - index: 2
+      type: "int"
+      label: "cap"
+    selectors:
+    - matchArgs:
+      - index: 2
+        operator: "GreaterThan"
+        values:
+        - "0"

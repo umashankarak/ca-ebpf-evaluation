@@ -1,0 +1,510 @@
+# =============================================================
+# CA-eBPF Experiment — All Kubernetes Manifests
+# Apply with: kubectl apply -f k8s-manifests.yaml
+# =============================================================
+
+# ---- Namespaces ----
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+  labels:
+    name: production
+    security-zone: trusted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    name: monitoring
+---
+# ---- Service Accounts ----
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: order-service-sa
+  namespace: production
+  labels:
+    app: order-service
+    identity: order-svc
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: payment-service-sa
+  namespace: production
+  labels:
+    app: payment-service
+    identity: payment-svc
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: user-profile-service-sa
+  namespace: production
+  labels:
+    app: user-profile-service
+    identity: user-profile-svc
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-service-sa
+  namespace: production
+  labels:
+    app: admin-service
+    identity: admin-svc
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traffic-generator-sa
+  namespace: production
+  labels:
+    app: traffic-generator
+---
+# ---- RBAC: Services can read their own service account tokens ----
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: service-identity-reader
+  namespace: production
+rules:
+- apiGroups: [""]
+  resources: ["serviceaccounts", "pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: service-identity-binding
+  namespace: production
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: service-identity-reader
+subjects:
+- kind: ServiceAccount
+  name: order-service-sa
+  namespace: production
+- kind: ServiceAccount
+  name: payment-service-sa
+  namespace: production
+- kind: ServiceAccount
+  name: user-profile-service-sa
+  namespace: production
+- kind: ServiceAccount
+  name: admin-service-sa
+  namespace: production
+---
+# ---- Network Policies (enforce trust boundaries) ----
+# Default deny all ingress in production namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: production
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+# Order service: accepts traffic from within production only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-order-service-ingress
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: order-service
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: production
+    ports:
+    - protocol: TCP
+      port: 5000
+---
+# Payment service: accepts only from order-service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-payment-service-ingress
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: payment-service
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: order-service
+    ports:
+    - protocol: TCP
+      port: 5001
+---
+# User-profile service: accepts only from payment-service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-user-profile-ingress
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: user-profile-service
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: payment-service
+    ports:
+    - protocol: TCP
+      port: 5002
+---
+# Admin service: accepts only from admin-service-sa pods (no order/payment access)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-admin-service-ingress
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: admin-service
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          role: admin-client
+    ports:
+    - protocol: TCP
+      port: 5003
+---
+# ---- ConfigMap: Shared service configuration ----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-config
+  namespace: production
+data:
+  PAYMENT_SERVICE_URL: "http://payment-service:5001"
+  USER_PROFILE_SERVICE_URL: "http://user-profile-service:5002"
+  ADMIN_SERVICE_URL: "http://admin-service:5003"
+  ORDER_SERVICE_URL: "http://order-service:5000"
+  LOG_LEVEL: "INFO"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4317"
+---
+# ---- Deployments ----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: production
+  labels:
+    app: order-service
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+        version: v1
+    spec:
+      serviceAccountName: order-service-sa
+      containers:
+      - name: order-service
+        image: ca-ebpf/order-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: service-config
+        env:
+        - name: SERVICE_NAME
+          value: "order-service"
+        - name: SERVICE_PORT
+          value: "5000"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: production
+  labels:
+    app: payment-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+        version: v1
+    spec:
+      serviceAccountName: payment-service-sa
+      containers:
+      - name: payment-service
+        image: ca-ebpf/payment-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5001
+        envFrom:
+        - configMapRef:
+            name: service-config
+        env:
+        - name: SERVICE_NAME
+          value: "payment-service"
+        - name: SERVICE_PORT
+          value: "5001"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-profile-service
+  namespace: production
+  labels:
+    app: user-profile-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-profile-service
+  template:
+    metadata:
+      labels:
+        app: user-profile-service
+        version: v1
+    spec:
+      serviceAccountName: user-profile-service-sa
+      containers:
+      - name: user-profile-service
+        image: ca-ebpf/user-profile-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5002
+        envFrom:
+        - configMapRef:
+            name: service-config
+        env:
+        - name: SERVICE_NAME
+          value: "user-profile-service"
+        - name: SERVICE_PORT
+          value: "5002"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-service
+  namespace: production
+  labels:
+    app: admin-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-service
+  template:
+    metadata:
+      labels:
+        app: admin-service
+        version: v1
+    spec:
+      serviceAccountName: admin-service-sa
+      containers:
+      - name: admin-service
+        image: ca-ebpf/admin-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5003
+        envFrom:
+        - configMapRef:
+            name: service-config
+        env:
+        - name: SERVICE_NAME
+          value: "admin-service"
+        - name: SERVICE_PORT
+          value: "5003"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5003
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+# ---- Services (ClusterIP) ----
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: production
+spec:
+  selector:
+    app: order-service
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: production
+spec:
+  selector:
+    app: payment-service
+  ports:
+  - port: 5001
+    targetPort: 5001
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-profile-service
+  namespace: production
+spec:
+  selector:
+    app: user-profile-service
+  ports:
+  - port: 5002
+    targetPort: 5002
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-service
+  namespace: production
+spec:
+  selector:
+    app: admin-service
+  ports:
+  - port: 5003
+    targetPort: 5003
+    protocol: TCP
+  type: ClusterIP
